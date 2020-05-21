@@ -1,0 +1,49 @@
+# ------------------------------------------------------------------------------------------------
+# 이미지 Preprocessing 을 통한 OCR 성능 개선 검토
+
+# %% import
+import cv2
+import os
+import numpy as np
+from PIL import Image
+from pytesseract import *
+import re
+import warnings
+warnings.filterwarnings('ignore')
+import glob
+import pandas as pd
+
+path = ' ' # 이미지 저장 경로 설정
+# --------------------------------------------------------------------------------------------------
+# %% 1. image_rot : 이미지 회전 및 지정 폴더 저장 함수
+def image_rot(num, angle, data): # num 이미지 번호, angle 회전시킬 각도, data 회전시킬 이미지 
+    img = Image.open(data)
+    img = img.rotate(angle)
+    text = image_to_string(img, lang="kor")
+    ang= 'num'+str(num)+'_'+str(angle)+'.png'
+    img.save(os.path.join(path,ang))
+    return(text)
+
+# %% 2. image_text : 이미지 텍스트 변환 결과 확인
+def image_text(data): # 인식시킬 이미지
+    img = Image.open(data)
+    text = image_to_string(img, lang="kor")
+    return(text)
+
+# %% 3. image_pre : threshold에 따른 이미지 전처리 및 텍스트 변환 결과 확인
+def image_pre(num, threshold, data): # num 이미지 번호, threshold 이진화의 임계값, data 이미지
+    img = cv2.imread(data, cv2.IMREAD_COLOR) # 이미지 불러오기
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # Task1: 그레이 스케일로 변환
+    img = cv2.fastNlMeansDenoising(img, 10, 7, 21) # Task2: 흑백 이미지에서 노이즈 제거
+    img = cv2.threshold(img, threshold , 255, cv2.THRESH_BINARY)[1] # Task4: binarisation: threshold- 임계값, 255- 최대값
+    text = image_to_string(img, lang="kor")
+    thr= 'num'+str(num)+'_'+str(threshold)+'.png'
+    cv2.imwrite(os.path.join(path,thr),img)
+    return(text, img)
+
+# %% 폴더 내 이미지 변환 및 변환 폴더 생성
+images = glob.glob(os.path.join(bfr_path_lst,'*.png')
+num=0
+for img in images: # before image에 대해서
+    num+=1
+    image_pre(num, threshold, img) # 이미지 전처리 후 저장
