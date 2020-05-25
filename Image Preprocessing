@@ -41,9 +41,26 @@ def image_pre(num, threshold, data): # num 이미지 번호, threshold 이진화
     cv2.imwrite(os.path.join(path,thr),img)
     return(text, img)
 
-# %% 폴더 내 이미지 변환 및 변환 폴더 생성
+# %% 4. 폴더 내 이미지 변환 및 변환 폴더 생성
 images = glob.glob(os.path.join(bfr_path_lst,'*.png')
 num=0
 for img in images: # before image에 대해서
     num+=1
     image_pre(num, threshold, img) # 이미지 전처리 후 저장
+    
+# %% 5. 이미지에서 긴 line지우기
+def line_remover(data):
+    gray = cv2.imread(data)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    minLineLength = 100
+    lines = cv2.HoughLinesP(image=edges, rho=1, theta=np.pi / 180, threshold=100, lines=np.array([]), minLineLength=minLineLength, maxLineGap=80)
+    a, b, c = lines.shape
+    for i in range(a):
+        x = lines[i][0][0] - lines[i][0][2]
+        y = lines[i][0][1] - lines[i][0][3]
+        if x != 0:
+            if abs(y / x) < 1:
+                cv2.line(gray, (lines[i][0][0], lines[i][0][1]), (lines[i][0][2], lines[i][0][3]), (255, 255, 255), 1,cv2.LINE_AA)
+    se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    gray = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, se)
+    result=cv2.imwrite('noline.jpg', gray)
